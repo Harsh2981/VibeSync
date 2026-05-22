@@ -1,97 +1,46 @@
-1 import { useState, useEffect } from 'react';
-    2 import './App.css';
-    3 import { AuthProvider, useAuth } from './context/AuthContext';
-    4 import { HangoutProvider } from './context/HangoutContext';
-    5 import Sidebar from './components/Sidebar';
-    6 import ChatArea from './components/ChatArea';
-    7 import ActiveMembers from './components/ActiveMembers';
-    8 import AuthScreen from './components/AuthScreen';
+ 1 import { useState } from 'react';
+    2 import { AuthProvider, useAuth } from './context/AuthContext';
+    3 import { HangoutProvider } from './context/HangoutContext';
+    4 import Sidebar from './components/Sidebar';
+    5 import ChatArea from './components/ChatArea';
+    6 import ActiveMembers from './components/ActiveMembers';
+    7 import AuthScreen from './components/AuthScreen';
+    8 import './App.css';
     9
-   10 function AppContent() {
-   11   const { currentUser, userProfile, loading } = useAuth();
-   12   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-   13   const [isMembersOpen, setIsMembersOpen] = useState(false);
-   14   const [hasError, setHasError] = useState(false);
-   15
-   16   useEffect(() => {
-   17     const handleError = (event) => {
-   18       console.error("Caught global error:", event.error);
-   19       setHasError(true);
-   20     };
-   21     window.addEventListener('error', handleError);
-   22     return () => window.removeEventListener('error', handleError);
-   23   }, []);
-   24
-   25   if (hasError) {
-   26     return (
-   27       <div className="loading-screen">
-   28         <h2>Oops! Something went wrong.</h2>
-   29         <button className="btn-primary" onClick={() => window.location.reload()}>
-   30           Try Refreshing
-   31         </button>
-   32       </div>
-   33     );
-   34   }
-   35
-   36   if (loading) {
-   37     return (
-   38       <div className="loading-screen">
-   39         <div className="auth-loader" />
-   40         <p>Entering the Lounge...</p>
-   41       </div>
-   42     );
-   43   }
-   44
-   45   if (!currentUser) {
-   46     return <AuthScreen />;
-   47   }
-   48
-   49   if (!userProfile) {
-   50     return (
-   51       <div className="loading-screen">
-   52         <div className="auth-loader" />
-   53         <p>Syncing your vibes...</p>
-   54       </div>
-   55     );
-   56   }
-   57
-   58   const toggleSidebar = () => {
-   59     setIsSidebarOpen(prev => !prev);
-   60     setIsMembersOpen(false);
-   61   };
-   62
-   63   const toggleMembers = () => {
-   64     setIsMembersOpen(prev => !prev);
-   65     setIsSidebarOpen(false);
-   66   };
-   67
-   68   return (
-   69     <HangoutProvider>
-   70       <div className="app-container">
-   71         <Sidebar
-   72           isMobileOpen={isSidebarOpen}
-   73           setIsMobileOpen={setIsSidebarOpen}
-   74         />
-   75         <ChatArea
-   76           onToggleSidebar={toggleSidebar}
-   77           onToggleMembers={toggleMembers}
-   78         />
-   79         <ActiveMembers
-   80           isOpen={isMembersOpen}
-   81           setIsOpen={setIsMembersOpen}
-   82         />
-   83       </div>
-   84     </HangoutProvider>
-   85   );
-   86 }
-   87
-   88 function App() {
-   89   return (
-   90     <AuthProvider>
-   91       <AppContent />
-   92     </AuthProvider>
-   93   );
-   94 }
-   95
-   96 export default App;
-  </details>
+   10 const DebugScreen = ({ msg }) => (
+   11   <div style={{ height: '100vh', width: '100vw', background: '#0a0a0c', color: 'white', display: 'flex',
+      flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+   12     <div style={{ width: '40px', height: '40px', border: '4px solid #a855f7', borderTopColor: 'transparent',
+      borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+   13     <p style={{ marginTop: '20px', fontSize: '18px' }}>{msg}</p>
+   14     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+   15   </div>
+   16 );
+   17
+   18 function AppContent() {
+   19   const { currentUser, userProfile, loading } = useAuth();
+   20   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+   21   const [isMembersOpen, setIsMembersOpen] = useState(false);
+   22
+   23   if (loading) return <DebugScreen msg="Entering the Lounge..." />;
+   24   if (!currentUser) return <AuthScreen />;
+   25   if (!userProfile) return <DebugScreen msg="Creating your profile..." />;
+   26
+   27   return (
+   28     <HangoutProvider>
+   29       <div className="app-container">
+   30         <Sidebar isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} />
+   31         <ChatArea onToggleSidebar={() => setIsSidebarOpen(true)} onToggleMembers={() => setIsMembersOpen(true)} />
+   32         <ActiveMembers isOpen={isMembersOpen} setIsOpen={setIsMembersOpen} />
+   33       </div>
+   34     </HangoutProvider>
+   35   );
+   36 }
+   37
+   38 export default function App() {
+   39   return (
+   40     <AuthProvider>
+   41       <AppContent />
+   42     </AuthProvider>
+   43   );
+   44 }
