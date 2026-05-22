@@ -1,480 +1,164 @@
-import { useState } from 'react';
-import { useHangout } from '../context/HangoutContext';
-import { Plus, Smile, X } from 'lucide-react';
-
-const NotesBar = () => {
-  const { currentUser, friends, setUserNote } = useHangout();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customText, setCustomText] = useState('');
-  const [selectedEmoji, setSelectedEmoji] = useState('✨');
-
-  if (!currentUser) return null;
-
-  const presetMoods = [
-    { emoji: '✨', label: 'Vibing', text: 'Just vibing in the lounge' },
-    { emoji: '☕', label: 'Chill', text: 'Coffee and chill chats' },
-    { emoji: '💻', label: 'Grinding', text: 'Deep work, coding away' },
-    { emoji: '😴', label: 'Sleepy', text: 'Running on 2 hours of sleep' },
-    { emoji: '🎮', label: 'Gaming', text: 'Ready for lobbies!' },
-    { emoji: '🔥', label: 'Hype', text: 'Feeling absolutely hyped!' }
-  ];
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setUserNote(selectedEmoji, customText.trim() || 'No thoughts, head empty');
-    setIsModalOpen(false);
-  };
-
-  const selectPreset = (preset) => {
-    setSelectedEmoji(preset.emoji);
-    setCustomText(preset.text);
-  };
-
-  return (
-    <div className="notes-container">
-      <div className="notes-scroll">
-        {/* User's Note Trigger */}
-        <div className="note-bubble-item" onClick={() => setIsModalOpen(true)}>
-          <div className="note-avatar-wrapper">
-            <div className="avatar-gradient" style={{ background: currentUser.avatarBg }}>
-              {currentUser.avatarChar}
-            </div>
-            <div className="user-note-badge">
-              <Plus size={12} />
-            </div>
-            {currentUser.note && (
-              <div className="thought-bubble user-thought">
-                <span className="thought-emoji">{currentUser.note.emoji}</span>
-                <span className="thought-text">{currentUser.note.text}</span>
-              </div>
-            )}
-          </div>
-          <span className="note-username">You</span>
-        </div>
-
-        {/* Friends' Notes */}
-        {friends.map((friend) => (
-          friend.note && (
-            <div key={friend.id} className="note-bubble-item">
-              <div className="note-avatar-wrapper">
-                <div className="avatar-gradient" style={{ background: friend.avatarBg }}>
-                  {friend.avatarChar}
-                </div>
-                <div className={`status-badge status-${friend.status}`}></div>
-                <div className="thought-bubble">
-                  <span className="thought-emoji">{friend.note.emoji}</span>
-                  <span className="thought-text">{friend.note.text}</span>
-                </div>
-              </div>
-              <span className="note-username">{friend.displayName}</span>
-            </div>
-          )
-        ))}
-      </div>
-
-      {/* Preset Feelings Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content glass-panel glass-panel-glow" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title-group">
-                <Smile className="modal-title-icon" />
-                <h3>What are you feeling now?</h3>
-              </div>
-              <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="status-input-wrapper">
-                <div className="status-emoji-selector">
-                  <input
-                    type="text"
-                    value={selectedEmoji}
-                    onChange={(e) => setSelectedEmoji(e.target.value)}
-                    maxLength={2}
-                    className="emoji-input"
-                  />
-                  <span className="emoji-input-hint">Emoji</span>
-                </div>
-                <div className="status-text-field">
-                  <input
-                    type="text"
-                    placeholder="Share a quick thought with the circle..."
-                    value={customText}
-                    onChange={(e) => setCustomText(e.target.value)}
-                    maxLength={35}
-                    className="thought-input"
-                    autoFocus
-                  />
-                  <span className="char-limit">{customText.length}/35</span>
-                </div>
-              </div>
-
-              <div className="presets-label">Quick Vibes:</div>
-              <div className="presets-grid">
-                {presetMoods.map((preset) => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    className={`preset-btn ${selectedEmoji === preset.emoji && customText === preset.text ? 'active' : ''}`}
-                    onClick={() => selectPreset(preset)}
-                  >
-                    <span className="preset-emoji">{preset.emoji}</span>
-                    <span className="preset-text">{preset.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  Set Vibe
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* CSS styling specifically for NotesBar */}
-      <style>{`
-        .notes-container {
-          padding: 16px 20px 12px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          background: rgba(10, 10, 12, 0.2);
-          overflow: visible;
-          position: relative;
-          z-index: 5;
-        }
-
-        .notes-scroll {
-          display: flex;
-          gap: 24px;
-          overflow-x: auto;
-          padding-top: 15px; /* space for bubbles */
-          padding-bottom: 4px;
-          scrollbar-width: none; /* Firefox */
-        }
-
-        .notes-scroll::-webkit-scrollbar {
-          display: none; /* Safari/Chrome */
-        }
-
-        .note-bubble-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          flex-shrink: 0;
-          position: relative;
-        }
-
-        .note-avatar-wrapper {
-          position: relative;
-          width: 56px;
-          height: 56px;
-        }
-
-        .avatar-gradient {
-          width: 100%;
-          height: 100%;
-          border-radius: var(--radius-full);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          font-size: 1.25rem;
-          color: #fff;
-          border: 2px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-          transition: transform 0.2s;
-        }
-
-        .note-bubble-item:hover .avatar-gradient {
-          transform: scale(1.05);
-          border-color: hsl(var(--color-purple));
-        }
-
-        .user-note-badge {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          background: hsl(var(--color-purple));
-          color: #fff;
-          width: 20px;
-          height: 20px;
-          border-radius: var(--radius-full);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 2px solid #000;
-          box-shadow: 0 2px 6px rgba(168, 85, 247, 0.4);
-        }
-
-        .status-badge {
-          position: absolute;
-          bottom: 1px;
-          right: 1px;
-          width: 13px;
-          height: 13px;
-          border-radius: var(--radius-full);
-          border: 2px solid #070709;
-        }
-
-        .status-online { background-color: #10b981; }
-        .status-idle { background-color: #f59e0b; }
-        .status-dnd { background-color: #ef4444; }
-
-        .thought-bubble {
-          position: absolute;
-          top: -24px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(18, 18, 24, 0.9);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: var(--radius-md);
-          padding: 4px 10px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          box-shadow: 0 6px 15px rgba(0,0,0,0.5);
-          white-space: nowrap;
-          max-width: 140px;
-          pointer-events: none;
-          z-index: 10;
-        }
-
-        .thought-bubble::after {
-          content: '';
-          position: absolute;
-          bottom: -5px;
-          left: 50%;
-          transform: translateX(-50%);
-          border-width: 5px 5px 0;
-          border-style: solid;
-          border-color: rgba(18, 18, 24, 0.9) transparent;
-          display: block;
-          width: 0;
-        }
-
-        .thought-emoji {
-          font-size: 0.95rem;
-        }
-
-        .thought-text {
-          font-size: 0.72rem;
-          color: hsl(var(--text-primary));
-          font-weight: 500;
-          max-width: 90px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .user-thought {
-          border-color: rgba(168, 85, 247, 0.35);
-        }
-
-        .note-username {
-          font-size: 0.75rem;
-          color: hsl(var(--text-secondary));
-          font-weight: 500;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          animation: fade-in 0.25s ease-out;
-        }
-
-        .modal-content {
-          width: 90%;
-          max-width: 480px;
-          padding: 24px;
-          background: rgba(15, 23, 42, 0.75);
-          position: relative;
-          animation: slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 20px;
-        }
-
-        .modal-title-group {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .modal-title-icon {
-          color: hsl(var(--color-purple));
-        }
-
-        .modal-content h3 {
-          font-size: 1.25rem;
-          font-weight: 700;
-        }
-
-        .modal-close-btn {
-          background: transparent;
-          border: none;
-          color: hsl(var(--text-secondary));
-          cursor: pointer;
-          padding: 4px;
-          border-radius: var(--radius-sm);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .modal-close-btn:hover {
-          background: rgba(255,255,255,0.05);
-          color: #fff;
-        }
-
-        .status-input-wrapper {
-          display: flex;
-          gap: 16px;
-          margin-bottom: 24px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          padding: 12px;
-          border-radius: var(--radius-md);
-        }
-
-        .status-emoji-selector {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .emoji-input {
-          width: 50px;
-          height: 48px;
-          background: rgba(168, 85, 247, 0.1);
-          border: 1px solid rgba(168, 85, 247, 0.3);
-          border-radius: var(--radius-sm);
-          color: #fff;
-          text-align: center;
-          font-size: 1.5rem;
-          outline: none;
-        }
-
-        .emoji-input-hint {
-          font-size: 0.65rem;
-          color: hsl(var(--text-muted));
-        }
-
-        .status-text-field {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-
-        .thought-input {
-          width: 100%;
-          background: transparent;
-          border: none;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          color: #fff;
-          font-size: 1rem;
-          padding: 8px 0;
-          outline: none;
-        }
-
-        .thought-input:focus {
-          border-color: hsl(var(--color-purple));
-        }
-
-        .char-limit {
-          align-self: flex-end;
-          font-size: 0.65rem;
-          color: hsl(var(--text-muted));
-          margin-top: 4px;
-        }
-
-        .presets-label {
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: hsl(var(--text-secondary));
-          margin-bottom: 10px;
-        }
-
-        .presets-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          margin-bottom: 28px;
-        }
-
-        .preset-btn {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          color: hsl(var(--text-secondary));
-          padding: 8px;
-          border-radius: var(--radius-sm);
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          transition: all 0.2s;
-        }
-
-        .preset-btn:hover {
-          background: rgba(168, 85, 247, 0.08);
-          border-color: rgba(168, 85, 247, 0.25);
-          color: #fff;
-        }
-
-        .preset-btn.active {
-          background: rgba(168, 85, 247, 0.15);
-          border-color: hsl(var(--color-purple));
-          color: #fff;
-          box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
-        }
-
-        .preset-emoji {
-          font-size: 1.25rem;
-        }
-
-        .preset-text {
-          font-size: 0.72rem;
-          font-weight: 500;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-        }
-
-        @media (max-width: 480px) {
-          .presets-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-      `}</style>
-    </div>
-  );
-};
-
-export default NotesBar;
+1 import { useState } from 'react';
+     2 import { useHangout } from '../context/HangoutContext';
+     3 import { Plus, Smile, X } from 'lucide-react';
+     4
+     5 const NotesBar = () => {
+     6   const { currentUser, friends, setUserNote } = useHangout();
+     7   const [isModalOpen, setIsModalOpen] = useState(false);
+     8   const [customText, setCustomText] = useState('');
+     9   const [selectedEmoji, setSelectedEmoji] = useState('✨');
+    10
+    11   if (!currentUser) return null;
+    12
+    13   const presetMoods = [
+    14     { emoji: '✨', label: 'Vibing', text: 'Just vibing in the lounge' },
+    15     { emoji: '☕', label: 'Chill', text: 'Coffee and chill chats' },
+    16     { emoji: '💻', label: 'Grinding', text: 'Deep work, coding away' },
+    17     { emoji: '😴', label: 'Sleepy', text: 'Running on 2 hours of sleep' },
+    18     { emoji: '🎮', label: 'Gaming', text: 'Ready for lobbies!' },
+    19     { emoji: '🔥', label: 'Hype', text: 'Feeling absolutely hyped!' }
+    20   ];
+    21
+    22   const handleSubmit = (e) => {
+    23     e.preventDefault();
+    24     setUserNote(selectedEmoji, customText.trim() || 'No thoughts, head empty');
+    25     setIsModalOpen(false);
+    26   };
+    27
+    28   const selectPreset = (preset) => {
+    29     setSelectedEmoji(preset.emoji);
+    30     setCustomText(preset.text);
+    31   };
+    32
+    33   return (
+    34     <div className="notes-container">
+    35       <div className="notes-scroll">
+    36         <div className="note-bubble-item" onClick={() => setIsModalOpen(true)}>
+    37           <div className="note-avatar-wrapper">
+    38             <div className="avatar-gradient" style={{ background: currentUser.avatarBg }}>
+    39               {currentUser.avatarChar}
+    40             </div>
+    41             <div className="user-note-badge">
+    42               <Plus size={12} />
+    43             </div>
+    44             {currentUser.note && (
+    45               <div className="thought-bubble user-thought">
+    46                 <span className="thought-emoji">{currentUser.note.emoji}</span>
+    47                 <span className="thought-text">{currentUser.note.text}</span>
+    48               </div>
+    49             )}
+    50           </div>
+    51           <span className="note-username">You</span>
+    52         </div>
+    53
+    54         {friends.map((friend) => (
+    55           friend.note && (
+    56             <div key={friend.id} className="note-bubble-item">
+    57               <div className="note-avatar-wrapper">
+    58                 <div className="avatar-gradient" style={{ background: friend.avatarBg }}>
+    59                   {friend.avatarChar}
+    60                 </div>
+    61                 <div className={`status-badge status-${friend.status}`}></div>
+    62                 <div className="thought-bubble">
+    63                   <span className="thought-emoji">{friend.note.emoji}</span>
+    64                   <span className="thought-text">{friend.note.text}</span>
+    65                 </div>
+    66               </div>
+    67               <span className="note-username">{friend.displayName}</span>
+    68             </div>
+    69           )
+    70         ))}
+    71       </div>
+    72
+    73       {isModalOpen && (
+    74         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+    75           <div className="modal-content glass-panel glass-panel-glow" onClick={(e) => e.stopPropagation()}>
+    76             <div className="modal-header">
+    77               <div className="modal-title-group">
+    78                 <Smile className="modal-title-icon" />
+    79                 <h3>What are you feeling now?</h3>
+    80               </div>
+    81               <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
+    82                 <X size={18} />
+    83               </button>
+    84             </div>
+    85
+    86             <form onSubmit={handleSubmit}>
+    87               <div className="status-input-wrapper">
+    88                 <div className="status-emoji-selector">
+    89                   <input
+    90                     type="text"
+    91                     value={selectedEmoji}
+    92                     onChange={(e) => setSelectedEmoji(e.target.value)}
+    93                     maxLength={2}
+    94                     className="emoji-input"
+    95                   />
+    96                   <span className="emoji-input-hint">Emoji</span>
+    97                 </div>
+    98                 <div className="status-text-field">
+    99                   <input
+   100                     type="text"
+   101                     placeholder="Share a quick thought with the circle..."
+   102                     value={customText}
+   103                     onChange={(e) => setCustomText(e.target.value)}
+   104                     maxLength={35}
+   105                     className="thought-input"
+   106                     autoFocus
+   107                   />
+   108                   <span className="char-limit">{customText.length}/35</span>
+   109                 </div>
+   110               </div>
+   111
+   112               <div className="presets-label">Quick Vibes:</div>
+   113               <div className="presets-grid">
+   114                 {presetMoods.map((preset) => (
+   115                   <button
+   116                     key={preset.label}
+   117                     type="button"
+   118                     className={`preset-btn ${selectedEmoji === preset.emoji && customText === preset.text ?
+       'active' : ''}`}
+   119                     onClick={() => selectPreset(preset)}
+   120                   >
+   121                     <span className="preset-emoji">{preset.emoji}</span>
+   122                     <span className="preset-text">{preset.label}</span>
+   123                   </button>
+   124                 ))}
+   125               </div>
+   126
+   127               <div className="modal-actions">
+   128                 <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>
+   129                   Cancel
+   130                 </button>
+   131                 <button type="submit" className="btn-primary">
+   132                   Set Vibe
+   133                 </button>
+   134               </div>
+   135             </form>
+   136           </div>
+   137         </div>
+   138       )}
+   139
+   140       <style>{`
+   141         .notes-container { padding: 16px 20px 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+       background: rgba(10, 10, 12, 0.2); overflow: visible; position: relative; z-index: 5; }
+   142         .notes-scroll { display: flex; gap: 24px; overflow-x: auto; padding-top: 15px; padding-bottom: 4px;
+       scrollbar-width: none; }
+   143         .note-bubble-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+       flex-shrink: 0; position: relative; }
+   144         .note-avatar-wrapper { position: relative; width: 56px; height: 56px; }
+   145         .avatar-gradient { width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center;
+       justify-content: center; font-weight: 700; font-size: 1.25rem; color: #fff; border: 2px solid rgba(255, 255, 255,
+       0.08); }
+   146         .thought-bubble { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background:
+       rgba(18, 18, 24, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 4px 10px;
+       display: flex; align-items: center; gap: 6px; z-index: 10; }
+   147         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0,
+       0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+   148         .modal-content { width: 90%; max-width: 480px; padding: 24px; background: rgba(15, 23, 42, 0.75); }
+   149       `}</style>
+   150     </div>
+   151   );
+   152 };
+   153
+   154 export default NotesBar;
+  </details>
