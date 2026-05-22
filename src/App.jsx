@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HangoutProvider } from './context/HangoutContext';
@@ -11,8 +11,30 @@ function AppContent() {
   const { currentUser, userProfile, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  // Show nothing while checking initial auth status
+  // Simple global error listener for debugging
+  useEffect(() => {
+    const handleError = (event) => {
+      console.error("Caught global error:", event.error);
+      setHasError(true);
+    };
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className="loading-screen">
+        <h2>Oops! Something went wrong.</h2>
+        <button className="btn-primary" onClick={() => window.location.reload()}>
+          Try Refreshing
+        </button>
+      </div>
+    );
+  }
+
+  // Show loading while checking initial auth status
   if (loading) {
     return (
       <div className="loading-screen">
