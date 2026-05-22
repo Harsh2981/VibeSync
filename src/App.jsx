@@ -8,13 +8,33 @@ import ActiveMembers from './components/ActiveMembers';
 import AuthScreen from './components/AuthScreen';
 
 function AppContent() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
+
+  // Show nothing while checking initial auth status
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="auth-loader" />
+        <p>Entering the Lounge...</p>
+      </div>
+    );
+  }
 
   // Show login/register screen if not authenticated
   if (!currentUser) {
     return <AuthScreen />;
+  }
+
+  // Show loading if we have a user but their profile is still fetching
+  if (!userProfile) {
+    return (
+      <div className="loading-screen">
+        <div className="auth-loader" />
+        <p>Syncing your vibes...</p>
+      </div>
+    );
   }
 
   const toggleSidebar = () => {
