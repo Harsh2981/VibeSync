@@ -1,109 +1,51 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../firebase/firebase';
-
-const AuthContext = createContext(null);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
-};
-
-// Gradient options for avatars - auto assigned on signup
-const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-  'linear-gradient(135deg, #0dcaf0 0%, #0d6efd 100%)',
-  'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)',
-  'linear-gradient(135deg, #10b981 0%, #6ee7b7 100%)',
-  'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-  'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
-];
-
-export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Register new user
-  const register = async (email, password, displayName) => {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Update auth profile displayName
-    await updateProfile(user, { displayName });
-
-    // Pick a random gradient for their avatar
-    const randomGrad = AVATAR_GRADIENTS[Math.floor(Math.random() * AVATAR_GRADIENTS.length)];
-    const avatarChar = displayName.charAt(0).toUpperCase();
-
-    // Create user profile doc in Firestore
-    const profileData = {
-      uid: user.uid,
-      displayName,
-      email,
-      avatarBg: randomGrad,
-      avatarChar,
-      status: 'online',
-      note: { emoji: '✨', text: 'Just joined VibeSync!' },
-      createdAt: serverTimestamp()
-    };
-
-    await setDoc(doc(db, 'users', user.uid), profileData);
-    return user;
-  };
-
-  // Login existing user
-  const login = async (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
-  };
-
-  // Logout
-  const logout = async () => {
-    await signOut(auth);
-    setUserProfile(null);
-  };
-
-  // Fetch user profile from Firestore
-  const fetchProfile = async (uid) => {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setUserProfile(docSnap.data());
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        await fetchProfile(user.uid);
-      } else {
-        setUserProfile(null);
-      }
-      setLoading(false);
-    });
-    return unsubscribe;
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ 
-      currentUser, 
-      userProfile,
-      setUserProfile,
-      register, 
-      login, 
-      logout,
-      loading
-    }}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
-};
+1 import { createContext, useContext, useState, useEffect } from 'react';
+    2 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile }
+      from 'firebase/auth';
+    3 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+    4 import { auth, db } from '../firebase/firebase';
+    5
+    6 const AuthContext = createContext(null);
+    7 export const useAuth = () => useContext(AuthContext);
+    8
+    9 export const AuthProvider = ({ children }) => {
+   10   const [currentUser, setCurrentUser] = useState(null);
+   11   const [userProfile, setUserProfile] = useState(null);
+   12   const [loading, setLoading] = useState(true);
+   13
+   14   useEffect(() => {
+   15     return onAuthStateChanged(auth, async (user) => {
+   16       setCurrentUser(user);
+   17       if (user) {
+   18         try {
+   19           const docRef = doc(db, 'users', user.uid);
+   20           const snap = await getDoc(docRef);
+   21           if (snap.exists()) {
+   22             setUserProfile(snap.data());
+   23           } else {
+   24             // AUTO-REPAIR: If profile is missing, create a default one
+   25             const newProfile = {
+   26               uid: user.uid,
+   27               displayName: user.displayName || 'Friend',
+   28               email: user.email,
+   29               avatarBg: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+   30               avatarChar: (user.displayName || 'F').charAt(0).toUpperCase(),
+   31               status: 'online',
+   32               createdAt: serverTimestamp()
+   33             };
+   34             await setDoc(docRef, newProfile);
+   35             setUserProfile(newProfile);
+   36           }
+   37         } catch (e) { console.error(e); }
+   38       }
+   39       setLoading(false);
+   40     });
+   41   }, []);
+   42
+   43   return (
+   44     <AuthContext.Provider value={{ currentUser, userProfile, loading, logout: () => signOut(auth), login: (e, p) =>
+      signInWithEmailAndPassword(auth, e, p), register: (e, p, d) => createUserWithEmailAndPassword(auth, e, p).then(async
+      (res) => { await updateProfile(res.user, { displayName: d }); return res.user; }) }}>
+   45       {children}
+   46     </AuthContext.Provider>
+   47   );
+   48 };
