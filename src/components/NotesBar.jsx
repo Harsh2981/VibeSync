@@ -8,6 +8,8 @@ const NotesBar = () => {
   const [customText, setCustomText] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('✨');
 
+  if (!currentUser) return null;
+
   const presetMoods = [
     { emoji: '✨', label: 'Vibing', text: 'Just vibing in the lounge' },
     { emoji: '☕', label: 'Chill', text: 'Coffee and chill chats' },
@@ -64,7 +66,7 @@ const NotesBar = () => {
                   <span className="thought-text">{friend.note.text}</span>
                 </div>
               </div>
-              <span className="note-username">{friend.name}</span>
+              <span className="note-username">{friend.displayName}</span>
             </div>
           )
         ))}
