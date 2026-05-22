@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HangoutProvider } from './context/HangoutContext';
 import Sidebar from './components/Sidebar';
